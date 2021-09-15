@@ -24,5 +24,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Meeting set for: ", resp.Date)
+	fmt.Printf("meeting set for: %s\n", resp.Date)
+
+	notesReq := meeting.NotesRequest{
+		MeetingID: resp.MeetingID,
+		Notes:     "something important",
+	}
+	var notesResp meeting.NotesResponse
+	if err := client.Call("Cal.MeetingNotes", &notesReq, &notesResp); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("meeting notes accepted")
 }

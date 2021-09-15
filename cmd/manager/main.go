@@ -19,7 +19,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cal := new(meeting.Cal)
+	cal := meeting.NewCal()
 	if err := rpc.Register(cal); err != nil {
 		log.Fatal(err)
 	}
