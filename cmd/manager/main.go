@@ -1,14 +1,17 @@
 package main
 
 import (
-	"fmt"
-	"io"
 	"log"
 	"net"
+	"net/http"
+	"net/rpc"
 	"os"
+
+	"github.com/genevieve/prise/meeting"
 )
 
-const SocketFile = "/tmp/echo.sock"
+const SocketFile = "/tmp/mgr.sock"
+const ReportBin = "report"
 
 // The manager sends + receives messages from reports on a unix socket.
 func main() {
@@ -16,33 +19,21 @@ func main() {
 		log.Fatal(err)
 	}
 
+	cal := new(meeting.Cal)
+	if err := rpc.Register(cal); err != nil {
+		log.Fatal(err)
+	}
+	rpc.HandleHTTP()
+
 	l, err := net.Listen("unix", SocketFile)
 	if err != nil {
-		log.Fatal("listen error: ", err)
+		log.Fatal(err)
 	}
 	defer l.Close()
 
-	for {
-		conn, err := l.Accept()
-		if err != nil {
-			log.Fatalf("Error on accept: %s", err)
-		}
-		go handleConn(conn)
-	}
-}
+	log.Println("manager ready")
 
-func handleConn(c net.Conn) {
-	received := make([]byte, 0)
-	for {
-		buf := make([]byte, 512)
-		count, err := c.Read(buf)
-		received = append(received, buf[:count]...)
-		if err != nil {
-			fmt.Println(string(received))
-			if err != io.EOF {
-				log.Fatalf("error on read: %s", err)
-			}
-			break
-		}
+	if err := http.Serve(l, nil); err != nil {
+		log.Fatal(err)
 	}
 }

@@ -3,22 +3,26 @@ package main
 import (
 	"fmt"
 	"log"
-	"net"
+	"net/rpc"
+
+	"github.com/genevieve/prise/meeting"
 )
 
-const SocketFile = "/tmp/echo.sock"
+const SocketFile = "/tmp/mgr.sock"
 
 func main() {
-	message := []byte("hello, world")
+	client, err := rpc.DialHTTP("unix", SocketFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	c, err := net.Dial("unix", SocketFile)
-	if err != nil {
-		log.Fatalf("dial error: %s", err)
+	log.Println("report connected to manager")
+
+	req := meeting.Request{Date: "today"}
+	var resp meeting.Response
+	if err := client.Call("Cal.Meeting", &req, &resp); err != nil {
+		log.Fatal(err)
 	}
-	defer c.Close()
-	count, err := c.Write(message)
-	if err != nil {
-		log.Fatalf("write error: %s", err)
-	}
-	fmt.Printf("wrote %d bytes\n", count)
+
+	fmt.Println("Meeting set for: ", resp.Date)
 }
